@@ -1,0 +1,57 @@
+name: Linux CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: GCC, Debug
+            cc: gcc
+            cxx: g++
+            config: Debug
+          - name: GCC, Release
+            cc: gcc
+            cxx: g++
+            config: Release
+          - name: Clang, Debug
+            cc: clang
+            cxx: clang++
+            config: Debug
+          - name: Clang, Release
+            cc: clang
+            cxx: clang++
+            config: Release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # CMake 4.0 or newer (cmake_minimum_required) and Ninja
+      - uses: lukka/get-cmake@latest
+
+      - name: Configure
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.config }}
+
+      - name: Test
+        run: ctest --test-dir build --build-config ${{ matrix.config }} --output-on-failure
