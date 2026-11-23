@@ -154,7 +154,10 @@ TEST_CASE("type queries read status, is_symlink reads symlink_status")
     CHECK(is_socket(status_of(fs::file_type::socket), "p"));
     CHECK(is_other(status_of(fs::file_type::socket), "p"));
     CHECK(is_other(status_of(fs::file_type::unknown), "p"));
+    // junction is an MSVC file_type. libstdc++ and libc++ do not have it
+#if defined(_MSC_VER)
     CHECK(is_other(status_of(fs::file_type::junction), "p"));
+#endif
 
     CHECK_FALSE(exists(status_of(fs::file_type::not_found), "p"));
     CHECK_FALSE(exists(status_of(fs::file_type::none), "p"));
